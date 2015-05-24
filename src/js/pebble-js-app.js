@@ -6,6 +6,8 @@ var locationOptions = {
 
 function locationSuccess(pos) {
   console.log('lat= ' + pos.coords.latitude + ' lon= ' + pos.coords.longitude);
+  Pebble.sendAppMessage({'latitude': pos.coords.latitude.toString(),
+                         'longitude': pos.coords.longitude.toString()});
 }
 
 function locationError(err) {

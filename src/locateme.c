@@ -31,6 +31,10 @@ static void inbox_config_handler(void *context) {
   app_message_register_inbox_dropped(inbox_drop_handler);
 }
 
+static void inbox_config_destroy() {
+  app_message_deregister_callbacks();
+}
+
 static void click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
   window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
@@ -64,6 +68,7 @@ static void init(void) {
 }
 
 static void deinit(void) {
+  inbox_config_destroy();
   window_destroy(window);
 }
 

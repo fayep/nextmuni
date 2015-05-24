@@ -1,6 +1,7 @@
 {
     "appKeys": {
-        "dummy": 0
+        "latitude": 0,
+        "longitude": 1
     },
     "capabilities": [
         "location"
