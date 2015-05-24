@@ -15,6 +15,22 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   text_layer_set_text(text_layer, "Down");
 }
 
+static void inbox_recv_handler(DictionaryIterator *iterator, void *context) {
+  text_layer_set_text(text_layer, "Received");
+}
+
+static void inbox_drop_handler(AppMessageResult reason, void *context) {
+  text_layer_set_text(text_layer, "Dropped");
+}
+
+static void inbox_config_handler(void *context) {
+  app_message_open(app_message_inbox_size_maximum(),
+                   app_message_outbox_size_maximum());
+  app_message_set_context(context);
+  app_message_register_inbox_received(inbox_recv_handler);
+  app_message_register_inbox_dropped(inbox_drop_handler);
+}
+
 static void click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
   window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
@@ -38,6 +54,7 @@ static void window_unload(Window *window) {
 static void init(void) {
   window = window_create();
   window_set_click_config_provider(window, click_config_provider);
+  inbox_config_handler(window);
   window_set_window_handlers(window, (WindowHandlers) {
     .load = window_load,
     .unload = window_unload,
