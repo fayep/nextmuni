@@ -26,10 +26,10 @@ static void process_dictionary(DictionaryIterator *iterator) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "%lu:%s", t->key, t->value->cstring);
     switch (t->key) {
       case KEY_LATITUDE:
-        strncpy(t->value->cstring, latitude, 9);
+        strncpy(latitude, t->value->cstring, 9);
         break;
       case KEY_LONGITUDE:
-        strncpy(t->value->cstring, longitude, 9);
+        strncpy(longitude, t->value->cstring, 9);
         break;
     }
     t = dict_read_next(iterator);
