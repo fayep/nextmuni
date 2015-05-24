@@ -1,5 +1,10 @@
 #include <pebble.h>
 
+#define KEY_LATITUDE 0
+#define KEY_LONGITUDE 1
+
+static char latitude[10] = "";
+static char longitude[10] = "";
 static Window *window;
 static TextLayer *text_layer;
 
@@ -15,8 +20,26 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   text_layer_set_text(text_layer, "Down");
 }
 
+static void process_dictionary(DictionaryIterator *iterator) {
+  Tuple *t = dict_read_first(iterator);
+  while (t != NULL) {
+    switch (t->key) {
+      case KEY_LATITUDE:
+        strncpy(t->value->cstring, latitude, 9);
+        break;
+      case KEY_LONGITUDE:
+        strncpy(t->value->cstring, longitude, 9);
+        break;
+    }
+    t = dict_read_next(iterator);
+  }
+}
+
 static void inbox_recv_handler(DictionaryIterator *iterator, void *context) {
-  text_layer_set_text(text_layer, "Received");
+  static char s_buffer[64];
+  process_dictionary(iterator);
+  snprintf(s_buffer, sizeof(s_buffer), "%s, %s", latitude, longitude);
+  text_layer_set_text(text_layer, s_buffer);
 }
 
 static void inbox_drop_handler(AppMessageResult reason, void *context) {
