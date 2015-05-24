@@ -3,8 +3,8 @@
 #define KEY_LATITUDE 0
 #define KEY_LONGITUDE 1
 
-static char latitude[10] = "";
-static char longitude[10] = "";
+static char latitude[10] = "lat";
+static char longitude[10] = "long";
 static Window *window;
 static TextLayer *text_layer;
 
@@ -23,6 +23,7 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
 static void process_dictionary(DictionaryIterator *iterator) {
   Tuple *t = dict_read_first(iterator);
   while (t != NULL) {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "%d:%s", t->key, t->value->cstring);
     switch (t->key) {
       case KEY_LATITUDE:
         strncpy(t->value->cstring, latitude, 9);
