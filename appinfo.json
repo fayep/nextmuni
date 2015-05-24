@@ -1,0 +1,18 @@
+{
+  "uuid": "b850f7e8-7fb7-497f-8d49-2f569a0ecb63",
+  "shortName": "locateme",
+  "longName": "locateme",
+  "companyName": "MakeAwesomeHappen",
+  "versionLabel": "1.0",
+  "sdkVersion": "3",
+  "targetPlatforms": ["aplite", "basalt"],
+  "watchapp": {
+    "watchface": false
+  },
+  "appKeys": {
+    "dummy": 0
+  },
+  "resources": {
+    "media": []
+  }
+}
