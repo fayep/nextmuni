@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+
+# Set up the load path so we can load things from our own lib
+$LOAD_PATH << File.expand_path('../../lib', __FILE__)
+
+require 'nextbus'
