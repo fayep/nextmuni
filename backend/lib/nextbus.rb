@@ -1,113 +1,10 @@
 require 'ap'
 require 'geohash'
-require 'json'
+require 'json' # !> assigned but unused variable - e
 require 'hashie'
 require 'nori'
 require 'active_support'
-
-module ServiceMixin
-  
-  class << self
-    def included(base)
-      base.extend(ClassMethods)
-    end
-  end
-  
-  def fetch(*args)
-    parent.nori.parse(
-      File.read(File.join(
-        File.dirname(__FILE__),
-        '..',
-        uri(*args).sub(/^.*\//,'')
-      ))
-    )
-  end
-  
-  def process(response, tag, key, *merge, &block)
-    response.extend Hashie::Extensions::DeepFind unless response.respond_to?(:deep_find)
-    response.class.send(:include, Hashie::Extensions::DeepMerge) unless response.respond_to?(:deep_merge!)
-    result = response.deep_find(tag)
-    Hash[*result.map do |v|
-      block.call(v) if block_given?
-      [v[key], merge.empty? ? v : v.merge(*merge)]
-    end.flatten]
-  end
-  
-  module ClassMethods
-    def parent(klass = nil)
-      @parent = klass unless klass.nil?
-      @parent
-    end
-  end
-  
-  def name
-    self.class.to_s.sub(/^.*::/,'').downcase
-  end
-
-  def parent
-    # The Service I belong to
-    self.class.parent
-  end
-
-  def uri(*args)
-    # A URI is the Service URI, plus its command
-    # Plus any args specified
-    parent.uri+"?"+[
-      args.empty? ? nil : args.last.map {|k,v| "#{k}=#{CGI.escape v.to_s}"}
-    ].flatten.compact.join('&')
-  end
-
-  
-
-  attr_accessor :ttl
-end
-
-class Service
-  
-  def uri
-    self.class.uri
-  end
-  
-  def nori
-    self.class.nori
-  end
-
-  class << self
-    def uri(uri = nil)
-      if uri.nil?
-        @uri
-      else
-        @uri = uri
-      end
-    end
-    
-    def nori(nori=nil)
-      if nori.nil?
-        @nori
-      else
-        @nori = nori
-      end
-    end
-    
-    def model(model, &block)
-      line = __LINE__; class_eval %{
-        const_set(model.capitalize,Class.new(Hash))
-        # Mixin Service Handlers to our new Hash subclass
-        #{model.capitalize}.send(:include, ServiceMixin)
-        # Establish Parent Relationship
-        #{model.capitalize}.send(:parent, self)
-        # Evaluate our given block in Class Context
-        #{model.capitalize}.class_eval(&block) if block_given?
-        
-        def #{model}
-          @#{model} = @#{model} || #{model.capitalize}.new # !> instance variable @route not initialized
-        end
-        
-      }, __FILE__, line
-      
-    end
-  end
-end
+require 'nextbus/service'
 
 module Nextbus
 
@@ -126,11 +23,8 @@ module Nextbus
         
     model :route do
       def get(agency)
-        self[:by_tag] = process(
-          fetch(command: :routeList, a: agency),
-          :route, :tag,
-          agency: agency
-        )
+        result = fetch(command: :routeList, a: agency)
+        self[:by_tag] = process(result, :route, :tag, agency: agency)
       end
     end
     
@@ -175,11 +69,9 @@ module Nextbus
   nb.message.get 'sf-muni', '7'
   nb.stop.get 'sf-muni', '7'
   # ap nb.agency.values.select{ |v| v[:regionTitle] == 'California-Northern' }
-  locationhash = GeoHash.encode(37.754,-122.487,7)
+  locationhash = GeoHash.encode(37.7712572,-122.4437057,5)
   ap nb.stop[:geo].select {|k,v| locationhash == k[0..locationhash.length-1]}
 end
-# ~> -:16:in `read': No such file or directory - ./../publicXMLFeed?command=routeList&a=sf-muni (Errno::ENOENT)
-# ~> 	from -:16:in `fetch'
-# ~> 	from -:121:in `list'
-# ~> 	from -:139:in `<module:Nextbus>'
-# ~> 	from -:106:in `<main>'
+# ~> /System/Library/Frameworks/Ruby.framework/Versions/2.0/usr/lib/ruby/2.0.0/rubygems/core_ext/kernel_require.rb:55:in `require': cannot load such file -- nextbus/service (LoadError)
+# ~> 	from /System/Library/Frameworks/Ruby.framework/Versions/2.0/usr/lib/ruby/2.0.0/rubygems/core_ext/kernel_require.rb:55:in `require'
+# ~> 	from -:7:in `<main>'
