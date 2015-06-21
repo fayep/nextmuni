@@ -5,6 +5,7 @@ require 'hashie'
 require 'nori'
 require 'active_support'
 require 'nextbus/service'
+require 'rbtree'
 
 module Nextbus
 
@@ -18,6 +19,10 @@ module Nextbus
     model :agency do
       def get
         self[:by_tag] = process(fetch(command: :agencyList), :agency, :tag)
+        self[:by_region] ||= {}
+        self[:by_tag].each do |t,v|
+          self[:by_region][v[:regionTitle]] = Array(self[:by_region][v[:regionTitle]]) << v
+	end
       end
     end
         
@@ -45,13 +50,14 @@ module Nextbus
       def get(agency, route)
         result = fetch(command: :routeConfig, a: agency, r: route)
         self[agency] ||= {}
-        self[:geo] ||= {}
+        self[:geo] ||= MultiRBTree.new
         self[agency][:by_tag] = process(result, :stop, :tag) do |v|
-          v[:lat] = rounded(v[:lat], 5)
-          v[:lon] = rounded(v[:lon], 5)
+          v[:lat] = v[:lat].to_f # rounded(v[:lat], 5)
+          v[:lon] = v[:lon].to_f # rounded(v[:lon], 5)
           v[:title] = CGI.unescapeHTML(v[:title])
           v[:route] = route
-          self[:geo][GeoHash.encode(v[:lat],v[:lon])] = v
+          v[:hash] = GeoHash.encode(v[:lat],v[:lon])
+          self[:geo][v[:hash]] = v
         end
         self[agency][route] = process(result, :direction, :name) do |v|
           # Link the stops to the by_tag hash
@@ -68,9 +74,14 @@ module Nextbus
   nb.route.get 'sf-muni' # => 
   nb.message.get 'sf-muni', '7'
   nb.stop.get 'sf-muni', '7'
-  # ap nb.agency.values.select{ |v| v[:regionTitle] == 'California-Northern' }
-  locationhash = GeoHash.encode(37.7712572,-122.4437057,5)
-  ap nb.stop[:geo].select {|k,v| locationhash == k[0..locationhash.length-1]}
+  regions = nb.agency[:by_region].keys.sort
+  location = GeoHash.new(37.753895,-122.4888, precision=7)
+  location = GeoHash.new(37.784602,-122.407329, precision=7)
+  (location.neighbors << location.to_s).each do |k|
+    nb.stop[:geo].bound(k, k+'zzzzzzz').each do |g,v|
+      ap v
+    end
+  end
 end
 # ~> /System/Library/Frameworks/Ruby.framework/Versions/2.0/usr/lib/ruby/2.0.0/rubygems/core_ext/kernel_require.rb:55:in `require': cannot load such file -- nextbus/service (LoadError)
 # ~> 	from /System/Library/Frameworks/Ruby.framework/Versions/2.0/usr/lib/ruby/2.0.0/rubygems/core_ext/kernel_require.rb:55:in `require'

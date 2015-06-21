@@ -23,6 +23,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency('multi_json', '~> 1.10.1')
   gem.add_dependency('hashie', '~> 3.4.2')
   gem.add_dependency('c_geohash', '~> 1.1.2')
+  gem.add_dependency('rbtree', '~> 0.4.2')
 
   # development dependencies.
   gem.add_development_dependency('nori')
