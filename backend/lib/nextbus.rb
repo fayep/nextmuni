@@ -1,4 +1,5 @@
 require 'ap'
+require 'benchmark'
 require 'geohash'
 require 'json'
 require 'hashie'
@@ -79,14 +80,13 @@ module Nextbus
   nb.agency.get
   nb.route.get 'sf-muni' # => 
   nb.message.get 'sf-muni', '7'
-  nb.stop.get 'sf-muni', '7'
-  nb.stop.get 'sf-muni', '7R'
-  nb.stop.get 'sf-muni', '7X'
+  puts "fetching stops"
+  puts Benchmark.measure { nb.route[:by_tag].each { |tag, r| nb.stop.get r[:agency], tag}}
   regions = nb.agency[:by_region].keys.sort
-  location = GeoHash.new(37.753895,-122.4888, precision=7)
+#  location = GeoHash.new(37.753895,-122.4888, precision=7)
   location = GeoHash.new(37.784602,-122.407329, precision=7)
   # Self and Neighbors
-  (location.neighbors << location.to_s).each do |prefix|
+  (Array(location.to_s)+location.neighbors).each do |prefix|
     # All sub-boxes
     nb.stop[:geo].bound(prefix, prefix+'zzzzzzz').each do |k, v|
       ap v

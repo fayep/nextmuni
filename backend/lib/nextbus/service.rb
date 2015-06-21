@@ -23,6 +23,7 @@ module ServiceMixin
     response.extend Hashie::Extensions::DeepFind unless response.respond_to?(:deep_find)
     response.class.send(:include, Hashie::Extensions::DeepMerge) unless response.respond_to?(:deep_merge!)
     result = response.deep_find(tag)
+    result = [result] if result.is_a? Hash
     Hash[*result.map do |v|
       block.call(v) if block_given?
       [v[key], merge.empty? ? v : v.merge(*merge)]
