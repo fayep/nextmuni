@@ -1,14 +1,15 @@
 require 'hashie'
 require 'nori'
+require 'cgi'
 
 module ServiceMixin
-  
+
   class << self
     def included(base)
       base.extend(ClassMethods)
     end
   end
-  
+
   def fetch(*args)
     parent.nori.parse(
       File.read(File.join(
@@ -18,7 +19,7 @@ module ServiceMixin
       ))
     )
   end
-  
+
   def process(response, tag, key, *merge, &block)
     response.extend Hashie::Extensions::DeepFind unless response.respond_to?(:deep_find)
     response.class.send(:include, Hashie::Extensions::DeepMerge) unless response.respond_to?(:deep_merge!)
@@ -29,14 +30,14 @@ module ServiceMixin
       [v[key], merge.empty? ? v : v.merge(*merge)]
     end.flatten]
   end
-  
+
   module ClassMethods
     def parent(klass = nil)
-      @parent = klass unless klass.nil?
+      @parent = klass if klass
       @parent
     end
   end
-  
+
   def name
     self.class.to_s.sub(/^.*::/,'').downcase
   end
@@ -54,17 +55,15 @@ module ServiceMixin
     ].flatten.compact.join('&')
   end
 
-  
-
   attr_accessor :ttl
 end
 
 class Service
-  
+
   def uri
     self.class.uri
   end
-  
+
   def nori
     self.class.nori
   end
@@ -77,7 +76,7 @@ class Service
         @uri = uri
       end
     end
-    
+
     def nori(nori=nil)
       if nori.nil?
         @nori
@@ -85,7 +84,7 @@ class Service
         @nori = nori
       end
     end
-    
+
     def model(model, &block)
       line = __LINE__; class_eval %{
         const_set(model.capitalize,Class.new(Hash))
@@ -95,13 +94,13 @@ class Service
         #{model.capitalize}.send(:parent, self)
         # Evaluate our given block in Class Context
         #{model.capitalize}.class_eval(&block) if block_given?
-        
+
         def #{model}
           @#{model} = @#{model} || #{model.capitalize}.new # !> instance variable @route not initialized
         end
-        
+
       }, __FILE__, line
-      
+
     end
   end
 end
