@@ -10,7 +10,14 @@
     "longName": "Locate Me",
     "projectType": "native",
     "resources": {
-        "media": []
+        "media": [
+            {
+                "file": "images/nextmuni.png",
+                "menuIcon": true,
+                "name": "nextmuni",
+                "type": "png"
+            }
+        ]
     },
     "sdkVersion": "3",
     "shortName": "locateme",
