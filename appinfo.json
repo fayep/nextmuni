@@ -9,21 +9,33 @@
     "resources": {
         "media": [
             {
-                "file": "images/nextmuni.png",
+                "file": "images/menu_icon.png",
                 "menuIcon": true,
-                "name": "nextmuni",
+                "name": "IMAGE_MENU_ICON",
                 "type": "png"
+            },
+            {
+                "file": "images/logo_splash.png",
+                "name": "IMAGE_LOGO_SPLASH",
+                "type": "png"
+            },
+            {
+                "file": "images/tile_splash.png",
+                "name": "IMAGE_TILE_SPLASH",
+                "type": "png"
+            },
+            {
+                "file": "fonts/UbuntuMono-Regular.ttf",
+                "name": "MONO_FONT_14",
+                "type": "font"
             }
         ]
     },
     "sdkVersion": "3",
     "shortName": "Next Muni",
-    "targetPlatforms": [
-        "basalt"
-    ],
     "uuid": "b74d37c1-4bb1-43e5-a0f6-14f390d4214e",
     "versionCode": 1,
-    "versionLabel": "1.0",
+    "versionLabel": "1.01",
     "watchapp": {
         "hiddenApp": false,
         "watchface": false
