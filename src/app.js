@@ -1,3 +1,13 @@
+var UI = require('ui');
+
+var card = new UI.Card({
+  title:'Next Muni',
+  subtitle:'Fetching...'
+});
+
+// Display the Card
+card.show();
+
 var locationOptions = {
   enableHighAccuracy: true,
   maximumAge: 10000,
@@ -18,7 +28,7 @@ function locationSuccess(pos) {
   console.log(url);
   xhrRequest(url, 'GET', function(response) {
     var json = JSON.parse(response);
-    console.log("Callback\n"+json);
+    console.log("Callback\n"+response);
     Pebble.sendAppMessage({'location': json.stops[0].title});
   });
 }
