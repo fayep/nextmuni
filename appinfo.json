@@ -1,0 +1,32 @@
+{
+    "appKeys": {
+        "location": 0,
+        "longitude": 1
+    },
+    "capabilities": [
+        "location"
+    ],
+    "companyName": "Faye Salwin",
+    "longName": "Locate Me",
+    "projectType": "native",
+    "resources": {
+        "media": [
+            {
+                "file": "images/nextmuni.png",
+                "menuIcon": true,
+                "name": "nextmuni",
+                "type": "png"
+            }
+        ]
+    },
+    "sdkVersion": "3",
+    "shortName": "locateme",
+    "targetPlatforms": [
+        "basalt"
+    ],
+    "uuid": "b850f7e8-7fb7-497f-8d49-2f569a0ecb63",
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": false
+    }
+}
