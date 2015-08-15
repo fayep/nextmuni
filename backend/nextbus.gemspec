@@ -18,6 +18,10 @@ Gem::Specification.new do |gem|
   gem.version       = Nextbus::VERSION
   # dependencies...
   gem.add_dependency('sysexits', '1.0.2')
+  gem.add_dependency('thin')
+  gem.add_dependency('rack')
+  gem.add_dependency('rack-etag')
+  gem.add_dependency('sinatra', '~> 1.4.6')
   gem.add_dependency('awesome_print', '~> 1.1.0')
   gem.add_dependency('abstract_type', '~> 0.0.7')
   gem.add_dependency('multi_json', '~> 1.10.1')

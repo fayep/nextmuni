@@ -1,6 +1,7 @@
 require 'hashie'
 require 'nori'
 require 'cgi'
+require 'net/http'
 
 module ServiceMixin
 
@@ -11,13 +12,7 @@ module ServiceMixin
   end
 
   def fetch(*args)
-    parent.nori.parse(
-      File.read(File.join(
-        File.dirname(__FILE__),
-        '..','..',
-        uri(*args).sub(/^.*\//,'')
-      ))
-    )
+    parent.fetch uri(*args)
   end
 
   def process(response, tag, key, *merge, &block)
@@ -68,7 +63,20 @@ class Service
     self.class.nori
   end
 
+  def cache_directory
+    self.class.cache_directory
+  end
+
   class << self
+
+    def cache_directory(dir = nil)
+      if dir
+        @cache_directory = dir
+      else
+        @cache_directory ||= File.join(File.dirname(__FILE__),'..','..','cache')
+      end
+    end
+
     def uri(uri = nil)
       if uri.nil?
         @uri
@@ -82,6 +90,27 @@ class Service
         @nori
       else
         @nori = nori
+      end
+    end
+
+    def fetch(url)
+      cachefile = File.join(cache_directory,url.sub(/^.*\//,''))
+      uri = URI(url)
+      req = Net::HTTP::Get.new(uri)
+      if File.exist? cachefile
+        stat = File.stat(cachefile)
+        req['If-Modified-Since'] = stat.mtime.rfc2822
+      end
+      res = Net::HTTP.start(uri.hostname, uri.port) {|http|
+        http.request(req)
+      }
+      if res.is_a? Net::HTTPSuccess
+        open cachefile, 'w' do |io|
+          io.write res.body
+        end
+        nori.parse(res.body)
+      else
+        nori.parse(File.read(cachefile))
       end
     end
 
