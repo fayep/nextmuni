@@ -1,3 +1,13 @@
+var UI = require('ui');
+
+var card = new UI.Card({
+  title:'Next Muni',
+  subtitle:'Fetching...'
+});
+
+// Display the Card
+card.show();
+
 var locationOptions = {
   enableHighAccuracy: true,
   maximumAge: 10000,
