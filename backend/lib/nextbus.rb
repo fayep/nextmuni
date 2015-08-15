@@ -1,6 +1,5 @@
 require 'rack'
 require 'rack/deflater'
-require 'rack/etag'
 require 'sinatra/base'
 require 'json'
 require 'nextbus/nextbus'
@@ -10,6 +9,7 @@ require 'benchmark'
 class NextBusApp < Sinatra::Base
   configure do
     enable :logging
+    set :server, %w[thin webrick]
   end
   use Rack::CommonLogger, STDOUT
   use Rack::ConditionalGet  # Support Caching

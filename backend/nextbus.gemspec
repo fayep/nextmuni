@@ -22,7 +22,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency('rack')
   gem.add_dependency('rack-etag')
   gem.add_dependency('sinatra', '~> 1.4.6')
-  gem.add_dependency('awesome_print', '~> 1.1.0')
+  gem.add_dependency('nokogiri', '~> 1.6.6.2')
   gem.add_dependency('abstract_type', '~> 0.0.7')
   gem.add_dependency('multi_json', '~> 1.10.1')
   gem.add_dependency('hashie', '~> 3.4.2')
