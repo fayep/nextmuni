@@ -4,24 +4,24 @@ var locationOptions = {
   timeout: 10000
 };
 
-var xmlhttp = new XMLHttpRequest();
-
-xmlhttp.onreadystatechange = function() {
-if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-    var response = JSON.parse(xmlhttp.responseText);
-    xmlhttp.callback(response);
-    }
-}
-
-function nextBusCallback(response) {
-  Pebble.sendAppMessage({'latitude': response.stops[0].title, 'longitude': ''});
-}
+var xhrRequest = function (url, type, callback) {
+  var xhr = new XMLHttpRequest();
+  xhr.onload = function () {
+    callback(this.responseText);
+  };
+  xhr.open(type, url);
+  xhr.send();
+};
 
 function locationSuccess(pos) {
   var url = 'http://hosted.zippysoft.com/nearest/sf-muni/'+pos.coords.latitude.toString()+'/'+pos.coords.longitude.toString();
-  xmlhttp.callback = nextBusCallback;
-  xmlhttp.open('GET', url, true);
+  console.log(url);
+  xhrRequest.open(url, 'GET', function(response) {
+    console.log("Callback\n"+response);
+    Pebble.sendAppMessage({'latitude': response.stops[0].title, 'longitude': ''});
+  });
 }
+
 
 function locationError(err) {
   console.log('location error (' + err.code + '): ' + err.message);
