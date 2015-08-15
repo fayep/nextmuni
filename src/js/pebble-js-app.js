@@ -16,9 +16,10 @@ var xhrRequest = function (url, type, callback) {
 function locationSuccess(pos) {
   var url = 'http://hosted.zippysoft.com/nearest/sf-muni/'+pos.coords.latitude.toString()+'/'+pos.coords.longitude.toString();
   console.log(url);
-  xhrRequest.open(url, 'GET', function(response) {
-    console.log("Callback\n"+response);
-    Pebble.sendAppMessage({'latitude': response.stops[0].title, 'longitude': ''});
+  xhrRequest(url, 'GET', function(response) {
+    var json = JSON.parse(response);
+    console.log("Callback\n"+json);
+    Pebble.sendAppMessage({'location': json.stops[0].title});
   });
 }
 

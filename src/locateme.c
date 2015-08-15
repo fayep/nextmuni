@@ -1,10 +1,8 @@
 #include <pebble.h>
 
-#define KEY_LATITUDE 0
-#define KEY_LONGITUDE 1
+#define KEY_LOCATION 0
 
-static char latitude[10] = "lat";
-static char longitude[10] = "long";
+static char location[50] = "location";
 static Window *window;
 static TextLayer *text_layer;
 
@@ -25,11 +23,8 @@ static void process_dictionary(DictionaryIterator *iterator) {
   while (t != NULL) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "%lu:%s", t->key, t->value->cstring);
     switch (t->key) {
-      case KEY_LATITUDE:
-        strncpy(latitude, t->value->cstring, 9);
-        break;
-      case KEY_LONGITUDE:
-        strncpy(longitude, t->value->cstring, 9);
+      case KEY_LOCATION:
+        strncpy(location, t->value->cstring, sizeof(location)-1);
         break;
     }
     t = dict_read_next(iterator);
@@ -39,7 +34,7 @@ static void process_dictionary(DictionaryIterator *iterator) {
 static void inbox_recv_handler(DictionaryIterator *iterator, void *context) {
   static char s_buffer[64];
   process_dictionary(iterator);
-  snprintf(s_buffer, sizeof(s_buffer), "%s, %s", latitude, longitude);
+  snprintf(s_buffer, sizeof(s_buffer), "%s", location);
   text_layer_set_text(text_layer, s_buffer);
 }
 
