@@ -15,6 +15,11 @@
             "type": "png"
           },
           {
+            "file": "images/fav_icon.png",
+            "name": "FAV_MENU_ICON",
+            "type": "png"
+          },
+          {
             "file": "images/logo_splash.png",
             "name": "IMAGE_LOGO_SPLASH",
             "type": "png"

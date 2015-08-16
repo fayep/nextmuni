@@ -1,28 +1,24 @@
 var UI = require('ui');
 var ajax = require('ajax');
+var ls = localStorage;
 
-if(!Object.keys) Object.keys = function(o){
-   if (o !== Object(o))
-      throw new TypeError('Object.keys called on non-object');
-   var ret=[],p;
-   for(p in o) if(Object.prototype.hasOwnProperty.call(o,p)) ret.push(p);
-   return ret;
-}
 
-if(!Object.values) Object.values = function(o){
-   if (o !== Object(o))
-      throw new TypeError('Object.keys called on non-object');
-   return Object.keys(o).map(function(v){
-     return o[v];
-   });
-}
+Object.prototype.keys = function() {
+  var ret = [], p;
+  for (p in this) {
+    if (Object.prototype.hasOwnProperty.call(this, p)) {
+      ret.push(p);
+    }
+  }
+  return ret;
+};
 
 Object.size = function(obj) {
-    var size = 0, key;
-    for (key in obj) {
-        if (obj.hasOwnProperty(key)) size++;
-    }
-    return size;
+  var size = 0, key;
+  for (key in obj) {
+      if (obj.hasOwnProperty(key)) size++;
+  }
+  return size;
 };
 
 var routes = {};
@@ -49,14 +45,14 @@ routes.parse = function(arr) {
 routes.menu = function() {
   menu.section(1, {
     title: 'Nearby Routes',
-    items: Object.keys(routes.routes).map(function(r) {
+    items: routes.routes.keys().map(function(r) {
       return {
         title: routes.routes[r].tag,
-        subtitle: routes.routes[r].title.substring(routes.routes[r].tag.length+1,255)
-      }
+        subtitle: routes.routes[r].title.substring(routes.routes[r].tag.length + 1, 255)
+      };
     })
   });
-}
+};
 
 stops.parse = function(arr) {
   var o = stops;
@@ -73,21 +69,44 @@ stops.parse = function(arr) {
 
 stops.menu = function() {
   menu = new UI.Menu();
+  var uncertain = true;
+  var direction = '';
+//  console.log(stops.stops.keys().map(function(s){
+//    return JSON.stringify(stops.stops[s].route);
+//  }));
   menu.section(0, {
     title: 'Nearby Stops',
-    items: Object.keys(stops.stops).map(function(s){
+    items: stops.stops.keys().map(function(s) {
     return {
-      title: stops.stops[s].tag+' '+Object.values(stops.stops[s].route).map(function(v) {
+      title: stops.stops[s].tag+' '+stops.stops[s].route.map(function(v) {
+                if (direction != routes.direction[v].dir[v].name) {
+                  if (uncertain) {
+                    direction = routes.direction[v].dir[v].name;
+                    uncertain = false;
+                  } else {
+                    uncertain = true;
+                  }
+                }
                return routes.direction[v].tag;
-             }),
+             })+' '+direction,
       subtitle: stops.stops[s].title
-    }})
+    };
+    })
   });
   menu.show();
   card.hide();
-  menu.on('select', function(e){
-    console.log(e.sectionIndex+' '+e.item.title);
-  });
+  menu.on('select', onTopLevelMenuSelect);
+};
+
+function onTopLevelMenuSelect(e) {
+  newMenu = new UI.Menu();
+//  newMenu.section(0, {
+//    title: e.title
+//  });
+  if (e.sectionIndex === 0) {
+    var stop = e.title.substring(0,e.title.indexOf(' '));
+
+  }
 }
 
 function onNearestOK(data, status, request) {
