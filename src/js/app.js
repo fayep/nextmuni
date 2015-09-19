@@ -2,9 +2,6 @@ var UI = require('ui');
 var ajax = require('ajax');
 var ls = localStorage;
 var X2JS = require('x2js');
-var DOM = require('dom-parser');
-var DOMParser = DOM.DOMParser;
-var XMLSerializer = DOM.XMLSerializer;
 
 Object.prototype.keys = function() {
   var ret = [], p;
