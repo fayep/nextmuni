@@ -125,7 +125,7 @@ class Service
         #{model.capitalize}.class_eval(&block) if block_given?
 
         def #{model}
-          @#{model} = @#{model} || #{model.capitalize}.new # !> instance variable @route not initialized
+          @#{model} ||= #{model.capitalize}.new
         end
 
       }, __FILE__, line

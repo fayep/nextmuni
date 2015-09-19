@@ -13,6 +13,11 @@ Object.prototype.keys = function() {
   return ret;
 };
 
+if (typeof String.prototype.startsWith != 'function') {
+  String.prototype.startsWith = function (str){
+    return this.slice(0, str.length) == str;
+  };
+}
 Object.size = function(obj) {
   var size = 0, key;
   for (key in obj) {
@@ -23,8 +28,10 @@ Object.size = function(obj) {
 
 var routes = {};
 var stops = {};
-var card;
-var menu;
+var card; // for statuses, transient
+var menu; // first choice
+var secondMenu; // second (usually last) choice
+var thirdMenu; // last only if second was in/outbound & >1 stop matches
 
 routes.parse = function(arr) {
   var o = routes;
@@ -48,7 +55,8 @@ routes.menu = function() {
     items: routes.routes.keys().map(function(r) {
       return {
         title: routes.routes[r].tag,
-        subtitle: routes.routes[r].title.substring(routes.routes[r].tag.length + 1, 255)
+        subtitle: routes.routes[r].title.substring(routes.routes[r].tag.length + 1, 255),
+        data: r
       };
     })
   });
@@ -78,7 +86,7 @@ stops.menu = function() {
     title: 'Nearby Stops',
     items: stops.stops.keys().map(function(s) {
     return {
-      title: stops.stops[s].tag+' '+stops.stops[s].route.map(function(v) {
+      title: stops.stops[s].route.map(function(v) {
                 if (direction != routes.direction[v].dir[v].name) {
                   if (uncertain) {
                     direction = routes.direction[v].dir[v].name;
@@ -89,7 +97,8 @@ stops.menu = function() {
                 }
                return routes.direction[v].tag;
              })+' '+direction,
-      subtitle: stops.stops[s].title
+      subtitle: stops.stops[s].title,
+      data: s
     };
     })
   });
@@ -98,37 +107,95 @@ stops.menu = function() {
   menu.on('select', onTopLevelMenuSelect);
 };
 
+function showSchedule(e) {
+  card = new UI.Card({
+    title: e.item.route,
+    subtitle: e.item.stops,
+    body: 'Fetching arrival data...'
+  });
+  card.show();
+  console.log('fetch schedule for '+e.item.stops+' '+e.item.route);
+}
+function selectStop(e) {
+  if (e.item.stops.length == 1) {
+    e.item.stops = e.item.stops[0];
+    showSchedule(e);
+  } else {
+    console.log(JSON.stringify(e.item));
+  }
+}
+
 function onTopLevelMenuSelect(e) {
-  newMenu = new UI.Menu();
+  secondMenu = new UI.Menu();
+  var data = e.item.data;
+  var sectionTitle;
+  var items;
+  console.log(data);
 //  newMenu.section(0, {
 //    title: e.title
 //  });
   if (e.sectionIndex === 0) {
-    var stop = e.title.substring(0,e.title.indexOf(' '));
-
+    sectionTitle = stops.stops[data].title;
+    items = stops.stops[data].route.map(function(v) {
+      var route = routes.direction[v].tag;
+      var direction = routes.direction[v].dir[v].title;
+      return {
+        title: route,
+        subtitle: direction,
+        stops: data,
+        route: route
+      };
+    });
+    secondMenu.on('select', showSchedule);
+  } else {
+    sectionTitle = routes.routes[data].title;
+    items = routes.routes[data].dir.keys().map(function(v) {
+      var direction = routes.routes[data].dir[v];
+      var sub;
+      if (direction.title.startsWith(direction.name)) {
+        sub = direction.title.substring(direction.name.length+1,255);
+      } else {
+        sub = direction.title;
+      }
+      return {
+        title: direction.name,
+        subtitle: sub,
+        route: data,
+        stops: direction.stops,
+        direction: v
+      };
+    });
+    secondMenu.on('select', selectStop);
   }
+  secondMenu.section(0, {
+    title: sectionTitle,
+    items: items
+  });
+  secondMenu.show();
 }
 
 function onNearestOK(data, status, request) {
   console.log('loaded data');
-  card.subtitle('Parsing...');
-  card.show();
-  routes.parse(data.routes);
-  stops.parse(data.stops);
-  stops.menu();
-  routes.menu();
+  if (data.routes === []) {
+    card.subtitle("Can't locate you");
+    card.body("Please try again later.");
+  } else {
+    card.subtitle('Parsing...');
+    routes.parse(data.routes);
+    stops.parse(data.stops);
+    stops.menu();
+    routes.menu();
+  }
 }
 
 function onNearestError(error, status, request) {
   card.subtitle('Failed.');
   card.body(error);
-  card.show();
 }
 
 function onLocationOK(pos) {
   console.log('loading data');
   card.subtitle('Loading...');
-  card.show();
   ajax(
     {
       url: 'http://hosted.zippysoft.com/nearest/sf-muni/'+pos.coords.latitude.toString()+'/'+pos.coords.longitude.toString(),
@@ -140,12 +207,11 @@ function onLocationError(err) {
   console.log('location error (' + err.code + '): ' + err.message);
   card.subtitle('Failed.');
   card.body('Failed to locate you.');
-  card.show();
 }
 
 function onAppReady(e) {
   console.log('fetching location');
-  card.subtitle('Fetching...');
+  card.subtitle('Locating...');
   card.show();
   navigator.geolocation.getCurrentPosition(
     onLocationOK, onLocationError,
@@ -157,8 +223,7 @@ function onAppReady(e) {
 }
 
 card = new UI.Card({
-  title: 'Next Muni',
-  subtitle: 'Starting...'
+  title: 'Next Muni'
 });
 
 onAppReady('woot');
