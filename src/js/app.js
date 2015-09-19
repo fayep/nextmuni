@@ -1,7 +1,10 @@
 var UI = require('ui');
 var ajax = require('ajax');
 var ls = localStorage;
-
+var X2JS = require('x2js');
+var DOM = require('dom-parser');
+var DOMParser = DOM.DOMParser;
+var XMLSerializer = DOM.XMLSerializer;
 
 Object.prototype.keys = function() {
   var ret = [], p;
@@ -18,6 +21,7 @@ if (typeof String.prototype.startsWith != 'function') {
     return this.slice(0, str.length) == str;
   };
 }
+
 Object.size = function(obj) {
   var size = 0, key;
   for (key in obj) {
@@ -115,6 +119,20 @@ function showSchedule(e) {
   });
   card.show();
   console.log('fetch schedule for '+e.item.stops+' '+e.item.route);
+  ajax(
+    {
+      url: 'http://webservices.nextbus.com/service/publicXMLFeed?command=messages&a=sf-muni&r=N',
+      type: 'xml'
+    },
+    function(data, status, request) {
+      x2js = new X2JS();
+      xml = x2js.xml_str2json(data);
+      console.log(JSON.stringify(xml));
+    },
+    function(error, status, request) {
+      console.log(error);
+    }
+  );
 }
 function selectStop(e) {
   if (e.item.stops.length == 1) {
