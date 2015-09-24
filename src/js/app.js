@@ -3,10 +3,13 @@ var ajax = require('ajax');
 var ls = localStorage;
 var X2JS = require('x2js');
 
-Object.prototype.keys = function() {
+MySpecialKeys = function() {
   var ret = [], p;
   for (p in this) {
-    if (Object.prototype.hasOwnProperty.call(this, p)) {
+    // When I took this out of Object (because that was breaking the DOM)
+    // it started detecting the keys function as having its own property
+    if (p != "keys" && Object.prototype.hasOwnProperty.call(this, p)) {
+      console.log(p);
       ret.push(p);
     }
   }
@@ -19,16 +22,10 @@ if (typeof String.prototype.startsWith != 'function') {
   };
 }
 
-Object.size = function(obj) {
-  var size = 0, key;
-  for (key in obj) {
-      if (obj.hasOwnProperty(key)) size++;
-  }
-  return size;
-};
-
 var routes = {};
+routes.keys = MySpecialKeys;
 var stops = {};
+stops.keys = MySpecialKeys;
 var card; // for statuses, transient
 var menu; // first choice
 var secondMenu; // second (usually last) choice
@@ -37,10 +34,13 @@ var thirdMenu; // last only if second was in/outbound & >1 stop matches
 routes.parse = function(arr) {
   var o = routes;
   o.routes = {};
+  o.routes.keys = MySpecialKeys;
   o.direction = {};
+  o.direction.keys = MySpecialKeys;
   arr.forEach(function(r) {
     o.routes[r.tag] = r;
     r.dir = {};
+    r.dir.keys = MySpecialKeys;
     r.direction.forEach(function(d) {
       d.stops = [];
       r.dir[d.tag] = d;
@@ -67,6 +67,7 @@ stops.parse = function(arr) {
   var o = stops;
   var rt;
   o.stops = {};
+  o.stops.keys = MySpecialKeys;
   arr.forEach(function(s) {
     o.stops[s.tag] = s;
     s.route.forEach(function(r){
@@ -78,7 +79,6 @@ stops.parse = function(arr) {
 
 stops.menu = function() {
   menu = new UI.Menu();
-  var uncertain = true;
   var direction = '';
 //  console.log(stops.stops.keys().map(function(s){
 //    return JSON.stringify(stops.stops[s].route);
@@ -86,21 +86,23 @@ stops.menu = function() {
   menu.section(0, {
     title: 'Nearby Stops',
     items: stops.stops.keys().map(function(s) {
-    return {
-      title: stops.stops[s].route.map(function(v) {
-                if (direction != routes.direction[v].dir[v].name) {
-                  if (uncertain) {
-                    direction = routes.direction[v].dir[v].name;
-                    uncertain = false;
-                  } else {
-                    uncertain = true;
+      // Uncertainty is per stop
+      var uncertain = true;
+      return {
+        title: stops.stops[s].route.map(function(v) {
+                  if (direction != routes.direction[v].dir[v].name) {
+                    if (uncertain) {
+                      direction = routes.direction[v].dir[v].name;
+                      uncertain = false;
+                    } else {
+                      uncertain = true;
+                    }
                   }
-                }
-               return routes.direction[v].tag;
-             })+' '+direction,
-      subtitle: stops.stops[s].title,
-      data: s
-    };
+                 return routes.direction[v].tag;
+               })+' '+direction,
+        subtitle: stops.stops[s].title,
+        data: s
+      };
     })
   });
   menu.show();
@@ -108,62 +110,140 @@ stops.menu = function() {
   menu.on('select', onTopLevelMenuSelect);
 };
 
-function showSchedule(e) {
-  card = new UI.Card({
-    title: e.item.route,
-    subtitle: e.item.stops,
-    body: 'Fetching arrival data...'
-  });
-  card.show();
-  console.log('fetch schedule for '+e.item.stops+' '+e.item.route);
-  ajax(
-    {
-      url: 'http://webservices.nextbus.com/service/publicXMLFeed?command=messages&a=sf-muni&r=N',
-      type: 'xml'
-    },
-    function(data, status, request) {
-      x2js = new X2JS();
-      xml = x2js.xml_str2json(data);
-      console.log(JSON.stringify(xml));
-    },
-    function(error, status, request) {
-      console.log(error);
+function showSchedule(data, status, request) {
+  card.body('Done');
+  var x2js = new X2JS();
+  var p = x2js.xml_str2json(data).body.predictions;
+  var d;
+  var tag;
+  var direction;
+  console.log(JSON.stringify(p));
+  if (Array.isArray(p) === true) {
+    var sectionTitle = '';
+    var items = [];
+
+    if (p[0]._routeTag == p[1]._routeTag) {
+
+      if ('direction' in p[0]) {
+        sectionTitle = p[0]._routeTag+' '+p[0].direction._title;
+      } else {
+        sectionTitle = p[0]._routeTag+' '+p[0]._dirTitleBecauseNoPredictions;
+      }
+      items = p.map(function(v) {
+        if ('direction' in v) {
+          d = v.direction;
+          return {
+            title: x2js.asArray(d.prediction).map(function(pr) {
+                     return pr._minutes;
+                   })+' minutes',
+            subtitle: v._stopTitle
+          };
+        } else {
+          return {
+            title: 'Not expected',
+            subtitle: v._stopTitle
+          };
+        }
+      });
+    } else {
+      sectionTitle = p[0]._stopTitle;
+      items = p.map(function(v) {
+        d = v.direction;
+        if (d) {
+          return {
+            title: x2js.asArray(v.direction.prediction).map(function(pr) {
+                     return pr._minutes;
+                   })+' minutes',
+            subtitle: v._routeTag+' '+d._title
+          };
+        } else {
+          return {
+            title: 'Not expected',
+            subtitle: v._routeTag+' '+v._dirTitleBecauseNoPredictions
+          }
+        }
+      });
     }
-  );
-}
-function selectStop(e) {
-  if (e.item.stops.length == 1) {
-    e.item.stops = e.item.stops[0];
-    showSchedule(e);
+    thirdMenu = new UI.Menu();
+    thirdMenu.section(0, {
+      title: sectionTitle,
+      items: items
+    });
+//    thirdMenu.on('select', stopSelected);
+    thirdMenu.show();
+    card.hide();
   } else {
-    console.log(JSON.stringify(e.item));
+    var sub;
+    d = p.direction;
+    if (d) {
+      tag = d.prediction[0]._dirTag;
+      direction = routes.direction[tag].dir[tag];
+
+      if (direction.title.startsWith(direction.name)) {
+      sub = direction.title.substring(direction.name.length+1,255);
+      } else {
+      sub = direction.title;
+      }
+      card.title(p._routeTag+' '+direction.name);
+      card.subtitle(undefined);
+      card.body(sub+'\n'+
+                p._stopTitle+'\n'+
+                x2js.asArray(d.prediction).map(function(pr) {
+                  return pr._minutes;
+                }).join(' ')+'\n'+
+                'minutes.');
+    } else {
+      card.title(p._routeTag+' '+p._dirTitleBecauseNoPredictions);
+      card.subtitle('Not expected');
+      card.body(undefined);
+    }
   }
 }
 
+function predict(items) {
+  // console.log(items)
+  card = new UI.Card({
+    title: 'Next Muni',
+    body: 'Fetching arrival data...'
+  });
+  card.show();
+  console.log('http://webservices.nextbus.com/service/publicXMLFeed?command=predictionsForMultiStops&a=sf-muni&'+items.join('&'));
+  ajax(
+    {
+      url: 'http://webservices.nextbus.com/service/publicXMLFeed?command=predictionsForMultiStops&a=sf-muni&'+items.join('&'),
+      type: 'xml'
+    },
+    showSchedule,
+    function(error, status, request) {
+      card.subtitle('Failed.');
+      card.body(error);
+    }
+  );
+}
+
+function stopSelected(e) {
+  // Build nextbus URL for predictionsForMultiStops &a=sf-muni &stops=rtag|stoptag... varies by stoptag
+  var items = e.item.stops.map(function(s) {
+    return 'stops='+e.item.route+'%7c'+s;
+  });
+  // Call Nextbus URL with Prediction callback
+  predict(items);
+}
+
 function onTopLevelMenuSelect(e) {
-  secondMenu = new UI.Menu();
   var data = e.item.data;
-  var sectionTitle;
   var items;
   console.log(data);
-//  newMenu.section(0, {
-//    title: e.title
-//  });
   if (e.sectionIndex === 0) {
-    sectionTitle = stops.stops[data].title;
+    // Build nextbus URL for predictionsForMultiStops &a=sf-muni &stops=rtag|stoptag... varies by route
     items = stops.stops[data].route.map(function(v) {
       var route = routes.direction[v].tag;
-      var direction = routes.direction[v].dir[v].title;
-      return {
-        title: route,
-        subtitle: direction,
-        stops: data,
-        route: route
-      };
+      // Using | works on emulator, not on phone.  Use %7c on both.
+      return 'stops='+route+'%7c'+data;
     });
-    secondMenu.on('select', showSchedule);
+    // Call Nexbus URL with Prediction callback
+    predict(items);
   } else {
-    sectionTitle = routes.routes[data].title;
     items = routes.routes[data].dir.keys().map(function(v) {
       var direction = routes.routes[data].dir[v];
       var sub;
@@ -180,13 +260,14 @@ function onTopLevelMenuSelect(e) {
         direction: v
       };
     });
-    secondMenu.on('select', selectStop);
+    secondMenu = new UI.Menu();
+    secondMenu.section(0, {
+      title: routes.routes[data].title,
+      items: items
+    });
+    secondMenu.on('select', stopSelected);
+    secondMenu.show();
   }
-  secondMenu.section(0, {
-    title: sectionTitle,
-    items: items
-  });
-  secondMenu.show();
 }
 
 function onNearestOK(data, status, request) {
