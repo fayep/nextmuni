@@ -294,7 +294,7 @@ function onLocationOK(pos) {
   card.subtitle('Loading...');
   ajax(
     {
-      url: 'http://hosted.zippysoft.com/nearest/sf-muni/'+pos.coords.latitude.toString()+'/'+pos.coords.longitude.toString(),
+      url: 'http://nextbus.zippysoft.com/nearest/sf-muni/'+pos.coords.latitude.toString()+'/'+pos.coords.longitude.toString(),
       type: 'json'
     }, onNearestOK, onNearestError);
 }

@@ -37,6 +37,7 @@
         ]
     },
     "sdkVersion": "3",
+    "targetPlatforms": ["basalt"],
     "shortName": "Next Muni",
     "uuid": "b74d37c1-4bb1-43e5-a0f6-14f390d4214e",
     "versionCode": 1,

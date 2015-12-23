@@ -21,6 +21,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency('thin')
   gem.add_dependency('rack')
   gem.add_dependency('rack-etag')
+  gem.add_dependency('msgpack')
   gem.add_dependency('sinatra', '~> 1.4.6')
   gem.add_dependency('nokogiri', '~> 1.6.6.2')
   gem.add_dependency('abstract_type', '~> 0.0.7')

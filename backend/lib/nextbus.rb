@@ -4,6 +4,7 @@ require 'sinatra/base'
 require 'json'
 require 'nextbus/nextbus'
 require 'benchmark'
+require 'msgpack'
 
 
 class NextBusApp < Sinatra::Base
@@ -31,6 +32,29 @@ class NextBusApp < Sinatra::Base
     # lat = 37.0+rand(751864..780090)/1000000.0
     # lon = -(122.0+rand(388505..508324)/1000000.0)
 
+  end
+
+  get '/mp/message/:agency/:route' do
+    headers['Content-Type'] = 'application/msgpack'
+    @nb.message.get(params[:agency], params[:route]).to_msgpack
+  end
+
+  get '/mp/nearest/:agency/:lat/:lon' do
+    routes = {}
+    headers['Content-Type'] = 'application/msgpack'
+    lat = params[:lat].to_f
+    lon = params[:lon].to_f
+    agency = params[:agency]
+    result = @nb.stop.near(lat,lon).map do |v|
+      {
+        tag: v[:tag],
+        title: v[:title],
+        route: v[:route].map do |r|
+          routes[@nb.route[r][:tag]] ||= @nb.route[agency][:by_tag][@nb.route[r][:tag]]; r
+        end
+      }
+    end
+    { routes: routes.values, stops: result }.to_msgpack
   end
 
   get '/message/:agency/:route' do
